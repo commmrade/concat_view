@@ -6,13 +6,13 @@
 #include <vector>
 
 
-template<std::ranges::input_range Range>
+template<std::ranges::input_range Range, std::size_t N>
 class concat_view {
 private:
-    Range& r1_;
-    Range& r2_;
+    std::array<Range*, N> rs_;
 public:
-    concat_view(Range& r1, Range& r2) : r1_(r1), r2_(r2) {}
+    template<typename ... Ranges>
+    concat_view(Ranges&... rs) : rs_({&rs...}) {}
 
     auto begin();
     auto end();
@@ -21,24 +21,29 @@ public:
     class Iterator;
 };
 
-template<std::ranges::input_range Range>
+template<typename... Ranges>
+concat_view(Ranges&...) -> concat_view<std::common_type_t<Ranges...>, sizeof...(Ranges)>;
+
+template<std::ranges::input_range Range, std::size_t N>
 template<typename Iter>
-class concat_view<Range>::Iterator {
+class concat_view<Range, N>::Iterator {
 private:
     concat_view* view_{nullptr};
     Iter iter_;
-    bool cur_iter_{false};
+    int cur_iter_{0};
 public:
     Iterator(concat_view* view, Iter iter) : view_(view), iter_(iter) {}
 
     Iterator& operator++() {
         ++iter_;
-        if (!cur_iter_) {
-            if (iter_ == view_->r1_.end()) {
-                iter_ = view_->r2_.begin();
-                cur_iter_ = true;
+
+        if (cur_iter_ != N - 1) {
+            if (iter_ == view_->rs_[cur_iter_]->end()) {
+                iter_ = view_->rs_[cur_iter_ + 1]->begin();
+                ++cur_iter_;
             }
         }
+
         return *this;
     }
     Iterator operator++(int) {
@@ -49,9 +54,12 @@ public:
 
     Iterator& operator--() requires std::bidirectional_iterator<Iter> {
         if (cur_iter_) {
-            if (iter_ == view_->r2_.begin()) {
-                iter_ = view_->r1_.end();
-                cur_iter_ = false;
+
+            if (cur_iter_ != 0) {
+                if (iter_ == view_->rs_[cur_iter_]->begin()) {
+                    iter_ = view_->rs_[cur_iter_ - 1]->end();
+                    --cur_iter_;
+                }
             }
         }
         --iter_;
@@ -70,12 +78,12 @@ public:
     }
 
     Iterator& operator+=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
-        if (!cur_iter_) {
-            const auto dist = std::distance(iter_, view_->r1_.end());
+        if (cur_iter_ != N - 1) {
+            const auto dist = std::distance(iter_, view_->rs_[cur_iter_]->end());
             if (n >= dist) {
                 n -= dist;
-                iter_ = view_->r2_.begin();
-                cur_iter_ = true;
+                iter_ = view_->rs_[cur_iter_ + 1]->begin();
+                ++cur_iter_;
             }
         }
 
@@ -90,12 +98,12 @@ public:
     }
 
     Iterator& operator-=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
-        if (cur_iter_) {
-            const auto dist = std::distance(view_->r2_.begin(), iter_);
+        if (cur_iter_ != 0) {
+            const auto dist = std::distance(view_->rs_[cur_iter_]->begin(), iter_);
             if (n > dist) {
                 n -= dist;
-                iter_ = view_->r1_.end();
-                cur_iter_ = false;
+                iter_ = view_->rs_[cur_iter_ - 1]->end();
+                --cur_iter_;
             }
         }
 
@@ -112,16 +120,16 @@ public:
     }
 };
 
-template<std::ranges::input_range Range>
-auto concat_view<Range>::begin() {
-    using Iter = decltype(r1_.begin());
-    return concat_view<Range>::Iterator<Iter>{this, r1_.begin()};
+template<std::ranges::input_range Range, std::size_t N>
+auto concat_view<Range, N>::begin() {
+    using Iter = decltype(rs_[0]->begin());
+    return Iterator<Iter>{this, rs_[0]->begin()};
 }
 
-template<std::ranges::input_range Range>
-auto concat_view<Range>::end() {
-    using Iter = decltype(r2_.end());
-    return concat_view<Range>::Iterator<Iter>{this, r2_.end()};
+template<std::ranges::input_range Range, std::size_t N>
+auto concat_view<Range, N>::end() {
+    using Iter = decltype(rs_[0]->end());
+    return Iterator<Iter>{this, rs_[N - 1]->end()};
 }
 
 int main(int, char**){
@@ -129,11 +137,13 @@ int main(int, char**){
     std::vector<int> b{4, 5, 6};
     std::vector<int> c{7, 8, 9};
 
-    auto view = concat_view{a, b};
-    auto beg = view.begin();
-    beg += 3;
-    beg -= 1;
+    auto view = concat_view{a, b, c};
 
+    auto beg = view.begin();
+    auto end = view.end();
+
+    beg += 5;
+    beg -= 4;
     std::println("{}", *beg);
 
     return 0;
