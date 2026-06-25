@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/klewy/myFiles/Code/c++/concat_view/build",
-  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/proj.dir/main.cpp.o -c /home/klewy/myFiles/Code/c++/concat_view/main.cpp",
-  "file": "/home/klewy/myFiles/Code/c++/concat_view/main.cpp",
-  "output": "/home/klewy/myFiles/Code/c++/concat_view/build/CMakeFiles/proj.dir/main.cpp.o"
-}
-]

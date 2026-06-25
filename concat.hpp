@@ -138,6 +138,9 @@ public:
         return res;
     }
 
+    bool operator==(const Iterator& rhs) {
+        return iter_ == rhs.iter_;
+    }
     bool operator!=(const Iterator& rhs) {
         return iter_ != rhs.iter_;
     }
@@ -153,18 +156,4 @@ template<std::ranges::input_range Range, std::size_t N>
 auto concat_view<Range, N>::end() {
     using Iter = decltype(rs_[0]->end());
     return Iterator<Iter>{this, rs_[N - 1]->end(), N - 1};
-}
-
-int main(int, char**){
-    std::vector<int> a{1, 2, 3};
-    std::vector<int> b{4, 5, 6};
-    std::vector<int> c{7, 8, 9};
-
-    auto view = concat_view(a, b, c);
-
-    std::for_each(view.begin(), view.end(), [](const auto value) {
-        std::println("Value: {}", value);
-    });
-
-    return 0;
 }
