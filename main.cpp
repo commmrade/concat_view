@@ -78,9 +78,9 @@ public:
     }
 
     Iterator& operator+=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
-        if (cur_iter_ != N - 1) {
-            const auto dist = std::distance(iter_, view_->rs_[cur_iter_]->end());
-            if (n >= dist) {
+        if (cur_iter_ < N - 1) {
+            std::ptrdiff_t dist = 0;
+            while ((dist = std::distance(iter_, view_->rs_[cur_iter_]->end())) <= n) {
                 n -= dist;
                 iter_ = view_->rs_[cur_iter_ + 1]->begin();
                 ++cur_iter_;
@@ -98,9 +98,9 @@ public:
     }
 
     Iterator& operator-=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
-        if (cur_iter_ != 0) {
-            const auto dist = std::distance(view_->rs_[cur_iter_]->begin(), iter_);
-            if (n > dist) {
+        if (cur_iter_ > 0) {
+            std::ptrdiff_t dist = 0;
+            while ((dist = std::distance(view_->rs_[cur_iter_]->begin(), iter_)) < n) {
                 n -= dist;
                 iter_ = view_->rs_[cur_iter_ - 1]->end();
                 --cur_iter_;
@@ -113,6 +113,16 @@ public:
 
     typename Iter::reference operator*() {
         return *iter_;
+    }
+
+    typename Iter::reference operator[](const std::ptrdiff_t idx) requires std::random_access_iterator<Iter> {
+        auto temp = *this;
+        temp += idx;
+        return *temp;
+    }
+
+    typename Iter::difference_type operator-(const Iterator& rhs) requires std::random_access_iterator<Iter> {
+        // todo: use cur_iter index
     }
 
     bool operator!=(const Iterator& rhs) {
@@ -140,10 +150,10 @@ int main(int, char**){
     auto view = concat_view{a, b, c};
 
     auto beg = view.begin();
+    beg += 6;
+    beg -= 6;
     auto end = view.end();
 
-    beg += 5;
-    beg -= 4;
     std::println("{}", *beg);
 
     return 0;
