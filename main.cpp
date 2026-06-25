@@ -78,13 +78,11 @@ public:
     }
 
     Iterator& operator+=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
-        if (cur_iter_ < N - 1) {
-            std::ptrdiff_t dist = 0;
-            while ((dist = std::distance(iter_, view_->rs_[cur_iter_]->end())) <= n) {
-                n -= dist;
-                iter_ = view_->rs_[cur_iter_ + 1]->begin();
-                ++cur_iter_;
-            }
+        std::ptrdiff_t dist = 0;
+        while ((dist = std::distance(iter_, view_->rs_[cur_iter_]->end())) <= n) {
+            n -= dist;
+            iter_ = view_->rs_[cur_iter_ + 1]->begin();
+            ++cur_iter_;
         }
 
         iter_ += n;
@@ -98,13 +96,11 @@ public:
     }
 
     Iterator& operator-=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
-        if (cur_iter_ > 0) {
-            std::ptrdiff_t dist = 0;
-            while ((dist = std::distance(view_->rs_[cur_iter_]->begin(), iter_)) < n) {
-                n -= dist;
-                iter_ = view_->rs_[cur_iter_ - 1]->end();
-                --cur_iter_;
-            }
+        std::ptrdiff_t dist = 0;
+        while ((dist = std::distance(view_->rs_[cur_iter_]->begin(), iter_)) < n) {
+            n -= dist;
+            iter_ = view_->rs_[cur_iter_ - 1]->end();
+            --cur_iter_;
         }
 
         iter_ -= n;
@@ -116,9 +112,7 @@ public:
     }
 
     typename Iter::reference operator[](const std::ptrdiff_t idx) requires std::random_access_iterator<Iter> {
-        auto temp = *this;
-        temp += idx;
-        return *temp;
+        return *(*this + idx);
     }
 
     typename Iter::difference_type operator-(const Iterator& rhs) requires std::random_access_iterator<Iter> {
@@ -150,11 +144,10 @@ int main(int, char**){
     auto view = concat_view{a, b, c};
 
     auto beg = view.begin();
-    beg += 6;
-    beg -= 6;
+
     auto end = view.end();
 
-    std::println("{}", *beg);
+    std::println("{}", beg[6]);
 
     return 0;
 }
