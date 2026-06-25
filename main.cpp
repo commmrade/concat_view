@@ -32,16 +32,14 @@ private:
     Iter iter_;
     int cur_iter_{0};
 public:
-    Iterator(concat_view* view, Iter iter) : view_(view), iter_(iter) {}
+    Iterator(concat_view* view, Iter iter, const int cur_iter) : view_(view), iter_(iter), cur_iter_(cur_iter) {}
 
     Iterator& operator++() {
         ++iter_;
 
-        if (cur_iter_ != N - 1) {
-            if (iter_ == view_->rs_[cur_iter_]->end()) {
-                iter_ = view_->rs_[cur_iter_ + 1]->begin();
-                ++cur_iter_;
-            }
+        if (iter_ == view_->rs_[cur_iter_]->end()) {
+            iter_ = view_->rs_[cur_iter_ + 1]->begin();
+            ++cur_iter_;
         }
 
         return *this;
@@ -53,14 +51,9 @@ public:
     }
 
     Iterator& operator--() requires std::bidirectional_iterator<Iter> {
-        if (cur_iter_) {
-
-            if (cur_iter_ != 0) {
-                if (iter_ == view_->rs_[cur_iter_]->begin()) {
-                    iter_ = view_->rs_[cur_iter_ - 1]->end();
-                    --cur_iter_;
-                }
-            }
+        if (iter_ == view_->rs_[cur_iter_]->begin()) {
+            iter_ = view_->rs_[cur_iter_ - 1]->end();
+            --cur_iter_;
         }
         --iter_;
         return *this;
@@ -115,8 +108,21 @@ public:
         return *(*this + idx);
     }
 
-    typename Iter::difference_type operator-(const Iterator& rhs) requires std::random_access_iterator<Iter> {
-        // todo: use cur_iter index
+    friend typename Iter::difference_type operator-(const Iterator& b, const Iterator& a) requires std::random_access_iterator<Iter> {
+        typename Iter::difference_type res = 0;
+
+        auto b_idx = b.cur_iter_;
+        while (b_idx != a.cur_iter_) {
+            res += b_idx == b.cur_iter_ ? std::distance(b.view_->rs_[b.cur_iter_]->begin(), b.iter_) + 1 : b.view_->rs_[b_idx]->size();
+            --b_idx;
+        }
+
+        if (a.cur_iter_ == b.cur_iter_) {
+            return b.iter_ - a.iter_;
+        }
+
+        res += std::distance(a.iter_, a.view_->rs_[a.cur_iter_]->end()) - 1;
+        return res;
     }
 
     bool operator!=(const Iterator& rhs) {
@@ -127,13 +133,13 @@ public:
 template<std::ranges::input_range Range, std::size_t N>
 auto concat_view<Range, N>::begin() {
     using Iter = decltype(rs_[0]->begin());
-    return Iterator<Iter>{this, rs_[0]->begin()};
+    return Iterator<Iter>{this, rs_[0]->begin(), 0};
 }
 
 template<std::ranges::input_range Range, std::size_t N>
 auto concat_view<Range, N>::end() {
     using Iter = decltype(rs_[0]->end());
-    return Iterator<Iter>{this, rs_[N - 1]->end()};
+    return Iterator<Iter>{this, rs_[N - 1]->end(), N - 1};
 }
 
 int main(int, char**){
@@ -142,12 +148,10 @@ int main(int, char**){
     std::vector<int> c{7, 8, 9};
 
     auto view = concat_view{a, b, c};
-
     auto beg = view.begin();
+    beg += 7;
 
-    auto end = view.end();
-
-    std::println("{}", beg[6]);
+    std::println("{}", beg - view.begin());
 
     return 0;
 }
