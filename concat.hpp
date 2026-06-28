@@ -18,6 +18,14 @@ public:
     auto begin();
     auto end();
 
+    std::size_t size() const {
+        std::size_t res = 0;
+        for (const auto rng : rs_) {
+            res += rng->size();
+        }
+        return res;
+    }
+
     template<typename Iter>
     class Iterator;
 };
@@ -77,7 +85,17 @@ public:
         return ret;
     }
 
+    friend Iterator operator+(std::ptrdiff_t n, const Iterator& iter) requires std::random_access_iterator<Iter> {
+        auto ret = iter;
+        ret += n;
+        return ret;
+    }
+
     Iterator& operator+=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
+        if (n < 0) {
+            return *this -= -n;
+        }
+
         std::ptrdiff_t dist = 0;
         while ((dist = std::distance(iter_, view_->rs_[cur_iter_]->end())) <= n) {
             n -= dist;
@@ -96,6 +114,10 @@ public:
     }
 
     Iterator& operator-=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
+        if (n < 0) {
+            return *this += -n;
+        }
+
         std::ptrdiff_t dist = 0;
         while ((dist = std::distance(view_->rs_[cur_iter_]->begin(), iter_)) < n) {
             n -= dist;
