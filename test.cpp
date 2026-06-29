@@ -16,9 +16,9 @@ TEST(ConcatIterator, OperatorPlusPlusPost) {
     constexpr auto is_t = std::random_access_iterator<decltype(iter)>;
 }
 
-// TEST(Main, Testmain) {
-//     std::vector<int> vec{1, 2, 3, 4, 5};
-//     auto iter = vec.begin();
-//     iter -= -2;
-//     ASSERT_EQ(*iter, 3);
-// }
+TEST(Main, Testmain) {
+    std::vector<int> vec{1, 2, 3, 4, 5};
+    auto iter = vec.begin();
+    iter -= -2;
+    ASSERT_EQ(*iter, 3);
+}

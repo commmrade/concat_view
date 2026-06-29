@@ -40,6 +40,11 @@ private:
     concat_view* view_{nullptr};
     Iter iter_;
     std::size_t cur_iter_{0};
+
+    template<typename IterD1, typename IterD2>
+    static std::ptrdiff_t distance(const IterD1& first, const IterD2& last) {
+        return last - first;
+    }
 public:
     using value_type = typename Iter::value_type;
     using difference_type = typename Iter::difference_type;
@@ -49,7 +54,7 @@ public:
 
     Iterator(concat_view* view, Iter iter, const std::size_t cur_iter) : view_(view), iter_(iter), cur_iter_(cur_iter) {}
 
-    Iterator& operator++() {
+    Iterator& operator++() noexcept {
         ++iter_;
 
         if (cur_iter_ < N - 1 && iter_ == view_->rs_[cur_iter_]->end()) {
@@ -59,13 +64,13 @@ public:
 
         return *this;
     }
-    Iterator operator++(int) {
+    Iterator operator++(int) noexcept {
         auto self = *this;
         ++(*this);
         return self;
     }
 
-    Iterator& operator--() requires std::bidirectional_iterator<Iter> {
+    Iterator& operator--() noexcept requires std::bidirectional_iterator<Iter> {
         if (cur_iter_ > 0 && iter_ == view_->rs_[cur_iter_]->begin()) {
             iter_ = view_->rs_[cur_iter_ - 1]->end();
             --cur_iter_;
@@ -73,31 +78,31 @@ public:
         --iter_;
         return *this;
     }
-    Iterator operator--(int) requires std::bidirectional_iterator<Iter> {
+    Iterator operator--(int) noexcept requires std::bidirectional_iterator<Iter> {
         auto self = *this;
         --(*this);
         return self;
     }
 
-    Iterator operator+(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
+    Iterator operator+(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
         auto ret = *this;
         ret += n;
         return ret;
     }
 
-    friend Iterator operator+(std::ptrdiff_t n, const Iterator& iter) requires std::random_access_iterator<Iter> {
+    friend Iterator operator+(std::ptrdiff_t n, const Iterator& iter) noexcept requires std::random_access_iterator<Iter> {
         auto ret = iter;
         ret += n;
         return ret;
     }
 
-    Iterator& operator+=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
+    Iterator& operator+=(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
         if (n < 0) {
             return *this -= -n;
         }
 
         std::ptrdiff_t dist = 0;
-        while ((dist = std::distance(iter_, view_->rs_[cur_iter_]->end())) <= n) {
+        while ((dist = distance(iter_, view_->rs_[cur_iter_]->end())) <= n) {
             n -= dist;
             iter_ = view_->rs_[cur_iter_ + 1]->begin();
             ++cur_iter_;
@@ -107,19 +112,19 @@ public:
         return *this;
     }
 
-    Iterator operator-(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
+    Iterator operator-(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
         auto ret = *this;
         ret -= n;
         return ret;
     }
 
-    Iterator& operator-=(std::ptrdiff_t n) requires std::random_access_iterator<Iter> {
+    Iterator& operator-=(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
         if (n < 0) {
             return *this += -n;
         }
 
         std::ptrdiff_t dist = 0;
-        while ((dist = std::distance(view_->rs_[cur_iter_]->begin(), iter_)) < n) {
+        while ((dist = distance(view_->rs_[cur_iter_]->begin(), iter_)) < n) {
             n -= dist;
             iter_ = view_->rs_[cur_iter_ - 1]->end();
             --cur_iter_;
@@ -129,15 +134,15 @@ public:
         return *this;
     }
 
-    typename Iter::reference operator*() {
+    typename Iter::reference operator*() noexcept {
         return *iter_;
     }
 
-    typename Iter::reference operator[](const std::ptrdiff_t idx) requires std::random_access_iterator<Iter> {
+    typename Iter::reference operator[](const std::ptrdiff_t idx) noexcept requires std::random_access_iterator<Iter> {
         return *(*this + idx);
     }
 
-    friend typename Iter::difference_type operator-(const Iterator& b, const Iterator& a) requires std::random_access_iterator<Iter> {
+    friend typename Iter::difference_type operator-(const Iterator& b, const Iterator& a) noexcept requires std::random_access_iterator<Iter> {
         typename Iter::difference_type res = 0;
 
         // in the same range
@@ -146,7 +151,7 @@ public:
         }
 
         auto b_idx = b.cur_iter_;
-        res += std::distance(b.view_->rs_[b_idx]->begin(), b.iter_) + 1; // add distance between start of current range and iter of current range.
+        res += distance(b.view_->rs_[b_idx]->begin(), b.iter_) + 1; // add distance between start of current range and iter of current range.
         // +1 for correct maths
         --b_idx;
 
@@ -156,7 +161,7 @@ public:
         }
 
         // we went through all the range in-between, finally, just add dsitance between end and a_iter. end() because b.iter is definitely not in this range
-        res += std::distance(a.iter_, a.view_->rs_[a.cur_iter_]->end()) - 1;
+        res += distance(a.iter_, a.view_->rs_[a.cur_iter_]->end()) - 1;
         return res;
     }
 
