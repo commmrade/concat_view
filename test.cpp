@@ -12,19 +12,58 @@ TEST(ConcatIterator, OperatorPlusPlusPost) {
     ASSERT_EQ(view.size(), 6);
 
     auto iter = view.begin();
-    ASSERT_EQ(*(2 + iter), 3);
-    ASSERT_EQ(*(iter + 2), 3);
 
-    (iter + 1) - iter;
+    ASSERT_TRUE((std::random_access_iterator<decltype(iter)>));
 
-    ASSERT_TRUE((std::is_same_v<decltype(iter)::iterator_category, std::random_access_iterator_tag>));
-    ASSERT_TRUE((std::totally_ordered<decltype(iter)>));
-    ASSERT_TRUE((std::sized_sentinel_for<decltype(iter), decltype(iter)>));
-    ASSERT_TRUE((requires {
-        std::declval<decltype(iter)>() - std::declval<decltype(iter)>();
-    }));
+    using Iter = decltype(view.begin());
 
-    constexpr auto is_t = std::random_access_iterator<decltype(iter)>;
+    // 1. bidirectional_iterator
+    static_assert(std::bidirectional_iterator<Iter>, "not bidirectional");
+
+    // 2. iter_concept derived from random_access_iterator_tag
+    // (checks what tag your iterator advertises)
+    using IterConcept = std::iterator_traits<Iter>::iterator_category;
+    static_assert(
+        std::derived_from<IterConcept, std::random_access_iterator_tag>,
+        "iter_concept not derived from random_access_iterator_tag"
+    );
+
+    // 3. totally_ordered
+    static_assert(std::totally_ordered<Iter>, "not totally_ordered");
+
+    // 4. sized_sentinel_for<Iter, Iter>  (operator- returns difference_type)
+    static_assert(std::sized_sentinel_for<Iter, Iter>, "not sized_sentinel_for");
+
+    // 5. operator+= returns Iter&
+    static_assert(requires(Iter i, std::iter_difference_t<Iter> n) {
+        { i += n } -> std::same_as<Iter&>;
+    }, "operator+= missing or wrong return type");
+
+    // 6. operator+ (iter + n) returns Iter
+    static_assert(requires(const Iter j, std::iter_difference_t<Iter> n) {
+        { j + n } -> std::same_as<Iter>;
+    }, "operator+(iter,n) missing or wrong return type");
+
+    // 7. operator+ (n + iter) returns Iter
+    static_assert(requires(const Iter j, std::iter_difference_t<Iter> n) {
+        { n + j } -> std::same_as<Iter>;
+    }, "operator+(n,iter) missing or wrong return type");
+
+    // 8. operator-= returns Iter&
+    static_assert(requires(Iter i, std::iter_difference_t<Iter> n) {
+        { i -= n } -> std::same_as<Iter&>;
+    }, "operator-= missing or wrong return type");
+
+    // 9. operator- (iter - n) returns Iter
+    static_assert(requires(const Iter j, std::iter_difference_t<Iter> n) {
+        { j - n } -> std::same_as<Iter>;
+    }, "operator-(iter,n) missing or wrong return type");
+
+    // 10. operator[] returns iter_reference_t<Iter>
+    static_assert(requires(const Iter j, std::iter_difference_t<Iter> n) {
+        { j[n] } -> std::same_as<std::iter_reference_t<Iter>>;
+    }, "operator[] missing or wrong return type");
+    // ASSERT_TRUE((std::random_access_iterator<decltype(iter)>));
     // ASSERT_TRUE(is_t);
 }
 

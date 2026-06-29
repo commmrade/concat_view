@@ -52,6 +52,7 @@ public:
     using pointer = typename Iter::pointer;
     using iterator_category = typename Iter::iterator_category;
 
+    Iterator() = default;
     Iterator(concat_view* view, Iter iter, const std::size_t cur_iter) : view_(view), iter_(iter), cur_iter_(cur_iter) {}
 
     Iterator& operator++() noexcept {
@@ -135,6 +136,9 @@ public:
     }
 
     typename Iter::reference operator*() noexcept {
+        return *iter_;
+    }
+    typename Iter::reference operator*() const noexcept {
         return *iter_;
     }
 
