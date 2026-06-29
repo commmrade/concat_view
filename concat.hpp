@@ -165,11 +165,36 @@ public:
         return res;
     }
 
-    bool operator==(const Iterator& rhs) {
-        return iter_ == rhs.iter_;
+    friend bool operator==(const Iterator& lhs, const Iterator& rhs) noexcept {
+        return lhs.iter_ == rhs.iter_;
     }
-    bool operator!=(const Iterator& rhs) {
-        return iter_ != rhs.iter_;
+    friend bool operator!=(const Iterator& lhs, const Iterator& rhs) noexcept {
+        return lhs.iter_ != rhs.iter_;
+    }
+
+    friend bool operator<(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
+        if (lhs.cur_iter_ == rhs.cur_iter_) {
+            return lhs.iter_ < rhs.iter_;
+        }
+        return lhs.cur_iter_ < rhs.cur_iter_;
+    }
+    friend bool operator>(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
+        if (lhs.cur_iter_ == rhs.cur_iter_) {
+            return lhs.iter_ > rhs.iter_;
+        }
+        return lhs.cur_iter_ > rhs.cur_iter_;
+    }
+    friend bool operator<=(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
+        if (lhs.cur_iter_ == rhs.cur_iter_) {
+            return lhs.iter_ <= rhs.iter_;
+        }
+        return lhs.cur_iter_ < rhs.cur_iter_;
+    }
+    friend bool operator>=(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
+        if (lhs.cur_iter_ == rhs.cur_iter_) {
+            return lhs.iter_ >= rhs.iter_;
+        }
+        return lhs.cur_iter_ > rhs.iter_;
     }
 };
 
