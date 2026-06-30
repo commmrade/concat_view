@@ -8,12 +8,29 @@
 
 
 template<std::ranges::input_range Range, std::size_t N>
-class concat_view {
+class concat_view : public std::ranges::view_interface<concat_view<Range, N>> {
 private:
-    std::array<Range*, N> rs_;
+    std::array<Range*, N> rs_{};
 public:
     template<typename ... Ranges>
     concat_view(Ranges&... rs) : rs_({&rs...}) {}
+    ~concat_view() = default;
+
+    concat_view(concat_view&& rhs) {
+        std::swap(rs_, rhs.rs_);
+    }
+    concat_view& operator=(concat_view&& rhs) {
+        std::swap(rs_, rhs.rs_);
+        return *this;
+    }
+
+    // FIXME: somehow i should take a const ref
+    concat_view(concat_view& rhs) {
+        rs_ = rhs.rs_;
+    }
+    concat_view& operator=(const concat_view& rhs) {
+        rs_ = rhs.rs_;
+    }
 
     auto begin();
     auto end();
