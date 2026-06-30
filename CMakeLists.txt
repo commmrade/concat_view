@@ -15,7 +15,8 @@ enable_testing()
 
 add_executable(
   proj
-  test.cpp
+  view_test.cpp
+  iter_test.cpp
 )
 target_link_libraries(
   proj

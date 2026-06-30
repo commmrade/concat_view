@@ -30,12 +30,17 @@ public:
     }
     concat_view& operator=(const concat_view& rhs) {
         rs_ = rhs.rs_;
+        return *this;
     }
 
     auto begin();
     auto end();
 
     std::size_t size() const {
+        if (!rs_[0]) [[unlikely]] {
+            return 0;
+        }
+
         std::size_t res = 0;
         for (const auto rng : rs_) {
             res += rng->size();
@@ -117,7 +122,7 @@ public:
         }
 
         std::ptrdiff_t dist = 0;
-        while ((dist = distance(iter_, view_->rs_[cur_iter_]->end())) <= n) {
+        while (cur_iter_ < N - 1 && (dist = distance(iter_, view_->rs_[cur_iter_]->end())) <= n) {
             n -= dist;
             iter_ = view_->rs_[cur_iter_ + 1]->begin();
             ++cur_iter_;
@@ -142,7 +147,7 @@ public:
         }
 
         std::ptrdiff_t dist = 0;
-        while ((dist = distance(view_->rs_[cur_iter_]->begin(), iter_)) < n) {
+        while (cur_iter_ > 0 && (dist = distance(view_->rs_[cur_iter_]->begin(), iter_)) < n) {
             n -= dist;
             iter_ = view_->rs_[cur_iter_ - 1]->end();
             --cur_iter_;
@@ -212,7 +217,7 @@ public:
         if (lhs.cur_iter_ == rhs.cur_iter_) {
             return lhs.iter_ >= rhs.iter_;
         }
-        return lhs.cur_iter_ > rhs.iter_;
+        return lhs.cur_iter_ > rhs.cur_iter_;
     }
 };
 
