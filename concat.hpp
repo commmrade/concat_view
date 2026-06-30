@@ -85,16 +85,13 @@ public:
         return self;
     }
 
-    Iterator operator+(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
+    Iterator operator+(std::ptrdiff_t n) const noexcept requires std::random_access_iterator<Iter> {
         auto ret = *this;
         ret += n;
         return ret;
     }
-
     friend Iterator operator+(std::ptrdiff_t n, const Iterator& iter) noexcept requires std::random_access_iterator<Iter> {
-        auto ret = iter;
-        ret += n;
-        return ret;
+        return iter + n;
     }
 
     Iterator& operator+=(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
@@ -113,10 +110,13 @@ public:
         return *this;
     }
 
-    Iterator operator-(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
+    Iterator operator-(std::ptrdiff_t n) const noexcept requires std::random_access_iterator<Iter> {
         auto ret = *this;
         ret -= n;
         return ret;
+    }
+    friend Iterator operator-(std::ptrdiff_t n, const Iterator& iter) noexcept requires std::random_access_iterator<Iter> {
+        return iter - n;
     }
 
     Iterator& operator-=(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
@@ -135,14 +135,11 @@ public:
         return *this;
     }
 
-    typename Iter::reference operator*() noexcept {
-        return *iter_;
-    }
     typename Iter::reference operator*() const noexcept {
         return *iter_;
     }
 
-    typename Iter::reference operator[](const std::ptrdiff_t idx) noexcept requires std::random_access_iterator<Iter> {
+    typename Iter::reference operator[](const std::ptrdiff_t idx) const noexcept requires std::random_access_iterator<Iter> {
         return *(*this + idx);
     }
 

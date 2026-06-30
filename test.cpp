@@ -69,5 +69,6 @@ TEST(ConcatIterator, OperatorPlusPlusPost) {
 
 TEST(Main, Testmain) {
     std::vector<int> vec{1, 2, 3, 4, 5};
-    auto iter = vec.begin();
+    const auto iter = vec.begin();
+    iter += 2;
 }
