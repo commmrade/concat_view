@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <concepts>
 #include <forward_list>
+#include <functional>
 #include <gtest/gtest.h>
 #include <iterator>
 #include <list>
@@ -33,6 +34,9 @@ TEST(ConcatNormalIter, PrecrementBetweenRange) {
 
 TEST(ConcatNormalIter, PrecrementToEnd) {
     std::vector<int> a{1, 2, 3}, b{9, 9};
+
+    std::array<std::reference_wrapper<std::vector<int>>, 1> arr{a};
+
     concat_view view{a, b};
 
     auto iter = view.begin();
@@ -46,7 +50,11 @@ TEST(ConcatNormalIter, PrecrementToEnd) {
 
 TEST(ConcatNormalIter, DecrementInRange) {
     std::vector<int> a{1, 2, 3}, b{9, 9};
+
+
     concat_view view{a, b};
+
+    std::ranges::zip_view zip{a,b};
 
     auto iter = view.begin();
     ++iter; ++iter;

@@ -13,31 +13,31 @@ private:
     std::array<Range*, N> rs_{};
 public:
     template<typename ... Ranges>
-    concat_view(Ranges&... rs) : rs_({&rs...}) {}
+    constexpr concat_view(Ranges&... rs) : rs_({&rs...}) {}
     ~concat_view() = default;
 
-    concat_view(concat_view&& rhs) {
+    constexpr concat_view(concat_view&& rhs) {
         std::swap(rs_, rhs.rs_);
     }
-    concat_view& operator=(concat_view&& rhs) {
+    constexpr concat_view& operator=(concat_view&& rhs) {
         std::swap(rs_, rhs.rs_);
         return *this;
     }
 
     // FIXME: somehow i should take a const ref
-    concat_view(concat_view& rhs) {
+    constexpr concat_view(concat_view& rhs) {
         rs_ = rhs.rs_;
     }
-    concat_view& operator=(const concat_view& rhs) {
+    constexpr concat_view& operator=(const concat_view& rhs) {
         rs_ = rhs.rs_;
         return *this;
     }
 
-    auto begin();
-    auto end();
+    constexpr auto begin();
+    constexpr auto end();
 
-    std::size_t size() const {
-        if (!rs_[0]) [[unlikely]] {
+    constexpr std::size_t size() const {
+        if (!rs_[0]) [[unlikely]] { // only happens after a move
             return 0;
         }
 
@@ -59,12 +59,12 @@ template<std::ranges::input_range Range, std::size_t N>
 template<typename Iter>
 class concat_view<Range, N>::Iterator {
 private:
-    concat_view* view_{nullptr};
-    Iter iter_;
+    const concat_view* view_{nullptr};
+    Iter iter_{};
     std::size_t cur_iter_{0};
 
     template<typename IterD1, typename IterD2>
-    static std::ptrdiff_t distance(const IterD1& first, const IterD2& last) {
+    constexpr static std::ptrdiff_t distance(const IterD1& first, const IterD2& last) {
         return last - first;
     }
 public:
@@ -74,10 +74,10 @@ public:
     using pointer = typename Iter::pointer;
     using iterator_category = typename Iter::iterator_category;
 
-    Iterator() = default;
-    Iterator(concat_view* view, Iter iter, const std::size_t cur_iter) : view_(view), iter_(iter), cur_iter_(cur_iter) {}
+    constexpr Iterator() = default;
+    constexpr Iterator(const concat_view* view, Iter iter, const std::size_t cur_iter) : view_(view), iter_(iter), cur_iter_(cur_iter) {}
 
-    Iterator& operator++() noexcept {
+    constexpr Iterator& operator++() noexcept {
         ++iter_;
 
         if (cur_iter_ < N - 1 && iter_ == view_->rs_[cur_iter_]->end()) {
@@ -87,13 +87,13 @@ public:
 
         return *this;
     }
-    Iterator operator++(int) noexcept {
+    constexpr Iterator operator++(int) noexcept {
         auto self = *this;
         ++(*this);
         return self;
     }
 
-    Iterator& operator--() noexcept requires std::bidirectional_iterator<Iter> {
+    constexpr Iterator& operator--() noexcept requires std::bidirectional_iterator<Iter> {
         if (cur_iter_ > 0 && iter_ == view_->rs_[cur_iter_]->begin()) {
             iter_ = view_->rs_[cur_iter_ - 1]->end();
             --cur_iter_;
@@ -101,22 +101,22 @@ public:
         --iter_;
         return *this;
     }
-    Iterator operator--(int) noexcept requires std::bidirectional_iterator<Iter> {
+    constexpr Iterator operator--(int) noexcept requires std::bidirectional_iterator<Iter> {
         auto self = *this;
         --(*this);
         return self;
     }
 
-    Iterator operator+(std::ptrdiff_t n) const noexcept requires std::random_access_iterator<Iter> {
+    constexpr Iterator operator+(std::ptrdiff_t n) const noexcept requires std::random_access_iterator<Iter> {
         auto ret = *this;
         ret += n;
         return ret;
     }
-    friend Iterator operator+(std::ptrdiff_t n, const Iterator& iter) noexcept requires std::random_access_iterator<Iter> {
+    constexpr friend Iterator operator+(std::ptrdiff_t n, const Iterator& iter) noexcept requires std::random_access_iterator<Iter> {
         return iter + n;
     }
 
-    Iterator& operator+=(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
+    constexpr Iterator& operator+=(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
         if (n < 0) {
             return *this -= -n;
         }
@@ -132,16 +132,16 @@ public:
         return *this;
     }
 
-    Iterator operator-(std::ptrdiff_t n) const noexcept requires std::random_access_iterator<Iter> {
+    constexpr Iterator operator-(std::ptrdiff_t n) const noexcept requires std::random_access_iterator<Iter> {
         auto ret = *this;
         ret -= n;
         return ret;
     }
-    friend Iterator operator-(std::ptrdiff_t n, const Iterator& iter) noexcept requires std::random_access_iterator<Iter> {
+    constexpr friend Iterator operator-(std::ptrdiff_t n, const Iterator& iter) noexcept requires std::random_access_iterator<Iter> {
         return iter - n;
     }
 
-    Iterator& operator-=(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
+    constexpr Iterator& operator-=(std::ptrdiff_t n) noexcept requires std::random_access_iterator<Iter> {
         if (n < 0) {
             return *this += -n;
         }
@@ -157,16 +157,16 @@ public:
         return *this;
     }
 
-    typename Iter::reference operator*() const noexcept {
+    constexpr reference operator*() const noexcept {
         return *iter_;
     }
 
-    typename Iter::reference operator[](const std::ptrdiff_t idx) const noexcept requires std::random_access_iterator<Iter> {
+    constexpr reference operator[](const std::ptrdiff_t idx) const noexcept requires std::random_access_iterator<Iter> {
         return *(*this + idx);
     }
 
-    friend typename Iter::difference_type operator-(const Iterator& b, const Iterator& a) noexcept requires std::random_access_iterator<Iter> {
-        typename Iter::difference_type res = 0;
+    constexpr friend difference_type operator-(const Iterator& b, const Iterator& a) noexcept requires std::random_access_iterator<Iter> {
+        difference_type res = 0;
 
         // in the same range
         if (a.cur_iter_ == b.cur_iter_) {
@@ -188,32 +188,32 @@ public:
         return res;
     }
 
-    friend bool operator==(const Iterator& lhs, const Iterator& rhs) noexcept {
+    constexpr friend bool operator==(const Iterator& lhs, const Iterator& rhs) noexcept {
         return lhs.iter_ == rhs.iter_;
     }
-    friend bool operator!=(const Iterator& lhs, const Iterator& rhs) noexcept {
+    constexpr friend bool operator!=(const Iterator& lhs, const Iterator& rhs) noexcept {
         return lhs.iter_ != rhs.iter_;
     }
 
-    friend bool operator<(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
+    constexpr friend bool operator<(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
         if (lhs.cur_iter_ == rhs.cur_iter_) {
             return lhs.iter_ < rhs.iter_;
         }
         return lhs.cur_iter_ < rhs.cur_iter_;
     }
-    friend bool operator>(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
+    constexpr friend bool operator>(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
         if (lhs.cur_iter_ == rhs.cur_iter_) {
             return lhs.iter_ > rhs.iter_;
         }
         return lhs.cur_iter_ > rhs.cur_iter_;
     }
-    friend bool operator<=(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
+    constexpr friend bool operator<=(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
         if (lhs.cur_iter_ == rhs.cur_iter_) {
             return lhs.iter_ <= rhs.iter_;
         }
         return lhs.cur_iter_ < rhs.cur_iter_;
     }
-    friend bool operator>=(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
+    constexpr friend bool operator>=(const Iterator& lhs, const Iterator& rhs) noexcept requires std::random_access_iterator<Iter> {
         if (lhs.cur_iter_ == rhs.cur_iter_) {
             return lhs.iter_ >= rhs.iter_;
         }
@@ -222,13 +222,13 @@ public:
 };
 
 template<std::ranges::input_range Range, std::size_t N>
-auto concat_view<Range, N>::begin() {
+constexpr auto concat_view<Range, N>::begin() {
     using Iter = decltype(rs_[0]->begin());
     return Iterator<Iter>{this, rs_[0]->begin(), 0};
 }
 
 template<std::ranges::input_range Range, std::size_t N>
-auto concat_view<Range, N>::end() {
+constexpr auto concat_view<Range, N>::end() {
     using Iter = decltype(rs_[0]->end());
     return Iterator<Iter>{this, rs_[N - 1]->end(), N - 1};
 }

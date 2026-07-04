@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <concepts>
 #include <forward_list>
+#include <functional>
 #include <gtest/gtest.h>
 #include <iterator>
 #include <list>
@@ -60,6 +61,8 @@ TEST(ConcatView, CopyAssigment) {
 
 TEST(ConcatView, MoveConstructor) {
     std::vector<int> a{1}, b{2, 3}, c{4, 5, 6}, d{10, 10, 12};
+
+
     concat_view view1{a, b, c, d};
     concat_view view2{std::move(view1)};
 
